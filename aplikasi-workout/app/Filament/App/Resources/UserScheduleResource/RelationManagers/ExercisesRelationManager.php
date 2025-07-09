@@ -50,48 +50,48 @@ class ExercisesRelationManager extends RelationManager
                     ]),
             ])
             ->actions([
-                EditAction::make()
-                    ->label('Edit')
-                    ->form([
-                        Forms\Components\TextInput::make('urutan')->label('Urutan')->numeric()->required(),
-                        Forms\Components\TextInput::make('repetisi')->label('Repetisi')->numeric(),
-                        Forms\Components\TextInput::make('duration_seconds')->label('Durasi (Detik)')->numeric()->required(),
-                    ])
-                    ->mutateFormDataUsing(function ($data, $record) {
-                        // Set default dari pivot ke form
-                        $data['urutan'] = $record->pivot->urutan;
-                        $data['repetisi'] = $record->pivot->repetisi;
-                        $data['duration_seconds'] = $record->pivot->duration_seconds;
-                        return $data;
-                    })
-                    ->action(function ($record, array $data) {
-                        // Ambil UserSchedule ID (parent)
-                        $userSchedule = $this->getOwnerRecord(); // model UserSchedule
+                // EditAction::make()
+                //     ->label('Edit')
+                //     ->form([
+                //         Forms\Components\TextInput::make('urutan')->label('Urutan')->numeric()->required(),
+                //         Forms\Components\TextInput::make('repetisi')->label('Repetisi')->numeric(),
+                //         Forms\Components\TextInput::make('duration_seconds')->label('Durasi (Detik)')->numeric()->required(),
+                //     ])
+                //     ->mutateFormDataUsing(function ($data, $record) {
+                //         // Set default dari pivot ke form
+                //         $data['urutan'] = $record->pivot->urutan;
+                //         $data['repetisi'] = $record->pivot->repetisi;
+                //         $data['duration_seconds'] = $record->pivot->duration_seconds;
+                //         return $data;
+                //     })
+                //     ->action(function ($record, array $data) {
+                //         // Ambil UserSchedule ID (parent)
+                //         $userSchedule = $this->getOwnerRecord(); // model UserSchedule
 
-                        // Update data pivot secara langsung
-                        DB::table('exercise_user_schedule')
-                            ->where('user_schedule_id', $userSchedule->id)
-                            ->where('exercise_id', $record->id)
-                            ->update([
-                                'urutan' => $data['urutan'],
-                                'repetisi' => $data['repetisi'],
-                                'duration_seconds' => $data['duration_seconds'],
-                                'updated_at' => now(), // jangan lupa ini kalau pakai timestamps
-                            ]);
-                    })
-                    ->modalHeading('Edit Latihan')
-                    ->modalSubmitActionLabel('Simpan Perubahan'),
+                //         // Update data pivot secara langsung
+                //         DB::table('exercise_user_schedule')
+                //             ->where('user_schedule_id', $userSchedule->id)
+                //             ->where('exercise_id', $record->id)
+                //             ->update([
+                //                 'urutan' => $data['urutan'],
+                //                 'repetisi' => $data['repetisi'],
+                //                 'duration_seconds' => $data['duration_seconds'],
+                //                 'updated_at' => now(), // jangan lupa ini kalau pakai timestamps
+                //             ]);
+                //     })
+                //     ->modalHeading('Edit Latihan')
+                //     ->modalSubmitActionLabel('Simpan Perubahan'),
 
 
                 DetachAction::make(),
 
-                Tables\Actions\Action::make('play_sound')
-                    ->label('Suara')
-                    ->action(fn(Component $livewire) => $livewire->dispatch('playSound')),
+                // Tables\Actions\Action::make('play_sound')
+                //     ->label('Suara')
+                //     ->action(fn(Component $livewire) => $livewire->dispatch('playSound')),
 
-                Tables\Actions\Action::make('start_timer')
-                    ->label('Mulai Timer')
-                    ->action(fn(Component $livewire) => $livewire->dispatch('startTimer')),
+                // Tables\Actions\Action::make('start_timer')
+                //     ->label('Mulai Timer')
+                //     ->action(fn(Component $livewire) => $livewire->dispatch('startTimer')),
             ])
             ->filters([]);
     }

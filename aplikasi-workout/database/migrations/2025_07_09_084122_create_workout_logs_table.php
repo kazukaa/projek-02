@@ -27,7 +27,7 @@ return new class extends Migration
 
             // (Opsional) Data spesifik saat latihan diselesaikan.
             // $table->integer('reps')->nullable(); // Jumlah repetisi yang dilakukan.
-            // $table->integer('duration_seconds')->nullable(); // Durasi yang dicatat.
+            $table->integer('duration_seconds')->nullable(); // Durasi yang dicatat.
 
             $table->timestamps(); // Mencatat kapan log ini dibuat.
         });

@@ -16,7 +16,7 @@
                 </div>
 
                 <div class="flex flex-none items-center gap-x-4">
-                    <button
+                    <!-- <button
                         x-on:click="$dispatch('speak-text', { text: '{{ addslashes($exercise->name) }}' })"
                         type="button"
                         title="Dengarkan Panduan Suara"
@@ -31,7 +31,7 @@
                         class="text-xs font-semibold text-blue-600 hover:text-blue-500"
                     >
                         Timer
-                    </button>
+                    </button> -->
                 </div>
             </li>
         @empty

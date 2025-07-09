@@ -5,23 +5,21 @@ namespace App\Filament\App\Widgets;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class MyActivityChart extends ChartWidget
 {
     protected static ?string $heading = 'Aktivitas Latihan Mingguan';
-    protected static ?int $sort = 2; // Tampilkan di bawah statistik
+    protected static ?int $sort = 2;
 
     protected function getData(): array
     {
-        /** @var \App\Models\User $user */
         $user = Auth::user();
         $endDate = Carbon::now();
         $startDate = $endDate->copy()->subDays(6);
 
         $logs = $user->workoutLogs()
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(duration_seconds) as total_duration'))
+            ->selectRaw("DATE(created_at) as date, COALESCE(SUM(duration_seconds), 0) as total_duration")
             ->groupBy('date')
             ->get()
             ->keyBy('date');
@@ -31,9 +29,15 @@ class MyActivityChart extends ChartWidget
 
         for ($i = 0; $i < 7; $i++) {
             $date = $startDate->copy()->addDays($i);
-            $dateString = $date->format('Y-m-d');
-            $labels[] = $date->translatedFormat('l'); // Nama hari dalam Bahasa Indonesia
-            $data[] = isset($logs[$dateString]) ? round($logs[$dateString]->total_duration / 60) : 0;
+            $dateString = $date->toDateString();
+            $labels[] = $date->translatedFormat('l');
+
+            if (isset($logs[$dateString])) {
+                $durationInSeconds = (float) $logs[$dateString]['total_duration'];
+                $data[] = round($durationInSeconds / 60, 2);
+            } else {
+                $data[] = 0;
+            }
         }
 
         return [

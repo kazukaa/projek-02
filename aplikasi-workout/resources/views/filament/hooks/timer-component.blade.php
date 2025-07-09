@@ -106,6 +106,8 @@
         let timeLeftInSeconds;
         let isPaused = false;
         let currentExerciseId = null;
+        let initialDuration = 0;
+
 
         // Fungsi bantuan untuk memformat detik menjadi format MM:SS
         function formatTime(seconds) {
@@ -116,23 +118,20 @@
 
         // Fungsi utama untuk menjalankan timer
         function runTimer(duration) {
-            clearInterval(countdownInterval); // Hentikan timer sebelumnya jika ada
+            clearInterval(countdownInterval);
 
+            initialDuration = duration;
             timeLeftInSeconds = duration;
             isPaused = false;
 
-            // Reset tampilan tombol ke kondisi awal
             pauseResumeBtn.textContent = 'Pause';
             finishBtn.style.display = 'none';
 
-            // Tampilkan overlay dan update waktu awal
             timerOverlay.style.display = 'flex';
             timerDisplay.textContent = formatTime(timeLeftInSeconds);
 
             countdownInterval = setInterval(() => {
-                if (isPaused) {
-                    return; // Jika dipause, lewati iterasi ini
-                }
+                if (isPaused) return;
 
                 timeLeftInSeconds--;
                 timerDisplay.textContent = formatTime(timeLeftInSeconds);
@@ -141,10 +140,11 @@
                     clearInterval(countdownInterval);
                     timerDisplay.textContent = "SELESAI!";
                     finishSound.play();
-                    finishBtn.style.display = 'inline-block'; // Tampilkan tombol "Selesai"
+                    finishBtn.style.display = 'inline-block';
                 }
             }, 1000);
         }
+
 
         // Mendengarkan sinyal 'start-timer' dari Filament (PHP)
         Livewire.on('start-timer', (event) => {
@@ -161,15 +161,18 @@
         // Menambahkan fungsi pada tombol 'Selesai'
         finishBtn.addEventListener('click', () => {
             if (currentExerciseId) {
-                // Kirim AJAX request untuk menyimpan log
+                const durationUsed = initialDuration - timeLeftInSeconds;
+
                 fetch('/log-workout', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                                .getAttribute('content'),
                         },
                         body: JSON.stringify({
                             exercise_id: currentExerciseId,
+                            duration_seconds: durationUsed,
                         }),
                     })
                     .then(response => {
@@ -181,7 +184,7 @@
                         Livewire.dispatch('markExerciseAsComplete', {
                             exerciseId: currentExerciseId
                         });
-                        closeTimerBtn.click(); // Tutup timer
+                        closeTimerBtn.click();
                     })
                     .catch(error => {
                         console.error('Error menyimpan log:', error);
@@ -189,7 +192,6 @@
                     });
             }
         });
-
 
         // Menambahkan fungsi pada tombol 'Tutup'
         closeTimerBtn.addEventListener('click', () => {

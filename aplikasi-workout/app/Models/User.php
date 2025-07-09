@@ -66,4 +66,9 @@ class User extends Authenticatable
         return $this->belongsToMany(Achievement::class, 'user_achievements')
             ->withPivot('unlocked_at');
     }
+
+    public function userAchievements(): HasMany
+    {
+        return $this->hasMany(UserAchievement::class);
+    }
 }

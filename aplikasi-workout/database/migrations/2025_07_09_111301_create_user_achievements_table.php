@@ -20,6 +20,8 @@ return new class extends Migration
 
             // Memastikan seorang pengguna tidak bisa mendapatkan lencana yang sama dua kali
             $table->unique(['user_id', 'achievement_id']);
+
+            $table->timestamps();
         });
     }
 

@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\WorkoutLogResource;
 use Illuminate\Support\Facades\Auth;
 use App\Events\WorkoutLogged;
+use Illuminate\Support\Facades\Log;
 
 class WorkoutLogController extends Controller
 {
@@ -34,18 +35,44 @@ class WorkoutLogController extends Controller
      */
     public function store(Request $request)
     {
-
-        // $validatedData = $request->validate([
-        //     'exercise_id' => 'required|exists:exercises,id',
-        //     'user_id'
-        // ]);
+        $userId = Auth::id();
+        $exerciseId = $request->input('exercise_id');
+        $duration = $request->input('duration_seconds', 0);
 
         WorkoutLog::create([
-            'user_id' => Auth::id(), // Ambil ID pengguna yang sedang login
-            'exercise_id' => $request->input('exercise_id'), // Ambil ID latihan dari request
+            'user_id' => $userId,
+            'exercise_id' => $exerciseId,
+            'duration_seconds' => $duration,
         ]);
 
+        $logCount = WorkoutLog::where('user_id', $userId)->count();
 
-        return response()->json(['message' => 'Workout log created successfully'], 201);
+        $eligibleAchievements = \App\Models\Achievement::where('requirement', '<=', $logCount)->get();
+
+
+        $existingAchievementIds = \App\Models\UserAchievement::where('user_id', $userId)
+            ->pluck('achievement_id')
+            ->toArray();
+
+        Log::info('Jumlah workout log user: ' . $logCount);
+        Log::info('Eligible achievements: ', $eligibleAchievements->pluck('id')->toArray());
+        Log::info('Existing achievements: ', $existingAchievementIds);
+
+        foreach ($eligibleAchievements as $achievement) {
+            \App\Models\UserAchievement::firstOrCreate(
+                [
+                    'user_id' => $userId,
+                    'achievement_id' => $achievement->id,
+                ],
+                [
+                    'unlocked_at' => now(),
+                ]
+            );
+        }
+
+        return response()->json([
+            'message' => 'Workout log created successfully',
+            'unlocked_achievements' => $eligibleAchievements->pluck('name'),
+        ], 201);
     }
 }

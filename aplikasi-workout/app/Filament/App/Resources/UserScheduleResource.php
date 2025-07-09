@@ -87,8 +87,8 @@ class UserScheduleResource extends Resource
             ])
             ->actions([
                 Action::make('startSession')
-                    ->label('Mulai Sesi')
-                    ->icon('heroicon-o-play-circle')
+                    ->label('View')
+                    ->icon('heroicon-o-eye')
                     ->color('success')
                     ->modalContent(fn ($record) => view(
                         'filament.tables.actions.start-workout-session',

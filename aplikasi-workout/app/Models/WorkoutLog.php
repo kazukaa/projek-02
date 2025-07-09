@@ -18,6 +18,7 @@ class WorkoutLog extends Model
     protected $fillable = [
         'user_id',
         'exercise_id',
+        'duration_seconds',
     ];
 
     /**
