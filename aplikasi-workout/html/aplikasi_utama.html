@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout App</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .sidebar-link { transition: background-color 0.2s, color 0.2s; }
+        .sidebar-link.active { background-color: #1F2937; color: #5EEAD4; font-weight: 600; }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+        .loader { border: 4px solid #4A5568; border-top: 4px solid #4299E1; border-radius: 50%; width: 32px; height: 32px; animation: spin 1.5s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <div class="flex h-screen">
+        <!-- Sidebar Navigasi -->
+        <aside class="w-64 bg-gray-800 text-gray-200 flex flex-col">
+            <!-- ... (Isi sidebar tetap sama) ... -->
+        </aside>
+
+        <!-- Konten Utama -->
+        <main class="flex-1 p-6 sm:p-10 overflow-y-auto">
+            <section id="dashboard-view" class="content-section">
+                <!-- Konten akan dimuat oleh JavaScript -->
+            </section>
+            <!-- ... (Section lain tetap sama) ... -->
+        </main>
+    </div>
+    
+    <script>
+        // ... (Variabel global dan fungsi initializeApp, showView, dll. tetap sama) ...
+
+        async function loadDashboardContent() {
+            const view = document.getElementById('dashboard-view');
+            view.innerHTML = `<div class="loader"></div>`;
+            try {
+                const response = await fetch(`${API_BASE_URL}/dashboard`, { headers: { 'Authorization': `Bearer ${apiToken}`, 'Accept': 'application/json' }});
+                if (!response.ok) throw new Error('Gagal memuat data dasbor.');
+                const result = await response.json();
+                const data = result.data;
+
+                // --- Membuat HTML untuk "Fokus Hari Ini" ---
+                let focusHtml = '';
+                if (data.todays_focus) {
+                    focusHtml = `
+                        <div class="bg-gradient-to-r from-teal-500 to-cyan-600 p-6 rounded-xl shadow-lg mb-8 text-white">
+                            <p class="text-sm font-semibold uppercase tracking-wider">${data.todays_focus.type}</p>
+                            <h2 class="text-3xl font-bold mt-2">${data.todays_focus.name}</h2>
+                            <p class="mt-2 opacity-80">${data.todays_focus.description || ''}</p>
+                            <button class="mt-4 bg-white text-teal-600 font-bold py-2 px-5 rounded-lg hover:bg-gray-200 transition-colors">Mulai Latihan</button>
+                        </div>
+                    `;
+                }
+                
+                // --- PERUBAHAN: Membuat HTML untuk "Lemari Piala" ---
+                let achievementsHtml = '';
+                if (data.recent_achievements && data.recent_achievements.length > 0) {
+                    achievementsHtml = `
+                        <div class="bg-gray-800 p-6 rounded-xl shadow-lg mb-8">
+                            <h2 class="text-2xl font-bold mb-4">Pencapaian Terbaru</h2>
+                            <div class="flex flex-wrap gap-4">
+                                ${data.recent_achievements.map(ach => `
+                                    <div class="text-center w-24">
+                                        <img src="${ach.icon_url || 'https://placehold.co/100x100/1F2937/5EEAD4?text=🏆'}" alt="${ach.name}" class="w-20 h-20 mx-auto rounded-full object-cover border-2 border-teal-400" title="${ach.description}">
+                                        <p class="text-xs mt-2 font-semibold truncate">${ach.name}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                // --- Akhir Perubahan ---
+
+                view.innerHTML = `
+                    <div class="mb-8">
+                        <h1 class="text-4xl font-bold">Halo, ${userName}!</h1>
+                        <p class="text-gray-400 mt-1">Teruslah bergerak, progres menantimu!</p>
+                    </div>
+                    
+                    ${focusHtml} 
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-gray-800 p-6 rounded-xl"><h3 class="text-gray-400 text-sm font-medium">Latihan Selesai</h3><p class="text-3xl font-bold mt-2">${data.stats.total_workouts}</p></div>
+                        <div class="bg-gray-800 p-6 rounded-xl"><h3 class="text-gray-400 text-sm font-medium">Total Waktu</h3><p class="text-3xl font-bold mt-2">${data.stats.total_duration_minutes} Menit</p></div>
+                        <div class="bg-gray-800 p-6 rounded-xl"><h3 class="text-gray-400 text-sm font-medium">Streak</h3><p class="text-3xl font-bold mt-2">${data.stats.streak_days} Hari</p></div>
+                        <div class="bg-gray-800 p-6 rounded-xl"><h3 class="text-gray-400 text-sm font-medium">Total Lencana</h3><p class="text-3xl font-bold mt-2">${data.stats.achievements_count}</p></div>
+                    </div>
+
+                    ${achievementsHtml}
+
+                    <div class="bg-gray-800 p-6 rounded-xl shadow-lg mt-8"><h2 class="text-2xl font-bold mb-4">Aktivitas Mingguan</h2><canvas id="activityChart"></canvas></div>
+                `;
+                renderActivityChart(data.chart.labels, data.chart.data);
+            } catch (error) {
+                view.innerHTML = `<p class="text-red-500">${error.message}</p>`;
+            }
+        }
+
+        // ... (Sisa fungsi JavaScript tetap sama) ...
+    </script>
+</body>
+</html>

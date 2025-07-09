@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tester Aplikasi Workout</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
+        h1, h2 { color: #333; }
+        #category-list, #exercise-list { list-style: none; padding: 0; }
+        #category-list li, #exercise-list li { 
+            background: #fff; 
+            margin: 5px 0; 
+            padding: 15px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        #category-list li { cursor: pointer; transition: background-color 0.3s; }
+        #category-list li:hover { background-color: #e9e9f4; }
+        p { color: #666; }
+    </style>
+</head>
+<body>
+
+    <h1>Aplikasi Workout di Kamar Kos</h1>
+
+    <h2>Pilih Kategori:</h2>
+    <ul id="category-list">
+        </ul>
+
+    <h2 id="exercise-title" style="display:none;">Latihan:</h2>
+    <ul id="exercise-list">
+        </ul>
+
+    <script>
+        // Alamat base URL dari API Laravel kita
+        const API_BASE_URL = 'http://127.0.0.1:8000/api';
+
+        const categoryList = document.getElementById('category-list');
+        const exerciseList = document.getElementById('exercise-list');
+        const exerciseTitle = document.getElementById('exercise-title');
+
+        /**
+         * Fungsi untuk mengambil dan menampilkan daftar kategori
+         */
+        async function fetchCategories() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/categories`);
+                const result = await response.json();
+                
+                // Kosongkan daftar sebelum mengisi yang baru
+                categoryList.innerHTML = '<li>Memuat...</li>';
+
+                // Loop melalui setiap kategori dan buat elemen list
+                let categoryHtml = '';
+                result.data.forEach(category => {
+                    // Saat list item diklik, panggil fungsi fetchExercises dengan slug kategori
+                    categoryHtml += `<li onclick="fetchExercises('${category.slug}')">
+                        <strong>${category.name}</strong> (${category.exercises_count} Latihan)
+                    </li>`;
+                });
+                categoryList.innerHTML = categoryHtml;
+
+            } catch (error) {
+                console.error('Gagal mengambil data kategori:', error);
+                categoryList.innerHTML = '<li>Gagal memuat data. Pastikan server Laravel berjalan.</li>';
+            }
+        }
+
+        /**
+         * Fungsi untuk mengambil dan menampilkan daftar latihan berdasarkan slug kategori
+         */
+        async function fetchExercises(categorySlug) {
+            try {
+                // Tampilkan judul dan pesan memuat...
+                exerciseTitle.style.display = 'block';
+                exerciseList.innerHTML = '<li>Memuat latihan...</li>';
+                
+                const response = await fetch(`${API_BASE_URL}/exercises?category=${categorySlug}`);
+                const result = await response.json();
+
+                let exerciseHtml = '';
+                if (result.data.length > 0) {
+                    result.data.forEach(exercise => {
+                        exerciseHtml += `<li>
+                            <strong>${exercise.name}</strong>
+                            <p>${exercise.description.replace(/<[^>]*>?/gm, '').substring(0, 100)}...</p>
+                            <small>Tingkat: ${exercise.difficulty}</small>
+                        </li>`;
+                    });
+                } else {
+                    exerciseHtml = '<li>Belum ada latihan untuk kategori ini.</li>';
+                }
+                exerciseList.innerHTML = exerciseHtml;
+
+            } catch (error) {
+                console.error('Gagal mengambil data latihan:', error);
+                exerciseList.innerHTML = '<li>Gagal memuat data latihan.</li>';
+            }
+        }
+
+        // Panggil fungsi pertama kali saat halaman dimuat
+        fetchCategories();
+    </script>
+
+</body>
+</html>

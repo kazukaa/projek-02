@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout App - Masuk</title>
+    
+    <!-- Menggunakan framework CSS modern: Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Menggunakan Google Fonts untuk tipografi yang lebih baik -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Mengaplikasikan font Poppins ke seluruh halaman */
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-900">
+
+    <!-- Kontainer utama untuk menengahkan semua konten -->
+    <div class="flex items-center justify-center min-h-screen p-4">
+        
+        <!-- Kartu Login Utama -->
+        <div class="relative w-full max-w-md p-8 space-y-8 bg-gray-800 rounded-xl shadow-lg">
+
+            <!-- Bagian Header: Logo dan Judul -->
+            <div class="text-center">
+                <!-- Menggunakan tag <img> untuk logo Anda -->
+                <!-- PASTIKAN Anda sudah menyimpan logo Anda di folder public/images/logo.png -->
+                <img src="public/images/transparan.png" alt="Logo Aplikasi" class="w-20 h-auto mx-auto mb-4 invert">
+                <h1 class="text-3xl font-bold text-white">Selamat Datang Kembali</h1>
+                <p class="mt-2 text-sm text-gray-400">Masuk untuk melanjutkan petualangan sehatmu.</p>
+            </div>
+
+            <!-- Pesan Error (akan diisi oleh JavaScript) -->
+            <p id="error-message" class="text-center text-red-400 font-medium"></p>
+            
+            <!-- Formulir Login -->
+            <form class="space-y-6" onsubmit="event.preventDefault(); handleLogin();">
+                <!-- Input Email -->
+                <div>
+                    <label for="email" class="text-sm font-medium text-gray-300">Email</label>
+                    <div class="mt-1 relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path></svg>
+                        </span>
+                        <input type="email" id="email" placeholder="email@anda.com" value="user2@gmail.com" class="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-teal-500 focus:border-teal-500" required>
+                    </div>
+                </div>
+
+                <!-- Input Password -->
+                <div>
+                    <label for="password" class="text-sm font-medium text-gray-300">Password</label>
+                    <div class="mt-1 relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                           <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>
+                        </span>
+                        <input type="password" id="password" placeholder="••••••••" value="password" class="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-teal-500 focus:border-teal-500" required>
+                    </div>
+                </div>
+
+                <!-- Opsi Tambahan -->
+                <div class="flex items-center justify-between">
+                    <a href="forgot-password.html" class="text-sm text-teal-400 hover:underline">Lupa password?</a>
+                </div>
+
+                <!-- Tombol Login -->
+                <button type="submit" class="w-full py-3 px-4 bg-teal-600 hover:bg-teal-700 focus:ring-4 focus:ring-teal-500/50 text-white font-semibold rounded-lg shadow-md transition-colors duration-300">
+                    Masuk Sekarang
+                </button>
+            </form>
+            
+            <p class="text-sm text-center text-gray-400">
+                Belum punya akun? <a href="register.html" class="font-medium text-teal-400 hover:underline">Daftar di sini</a>
+            </p>
+        </div>
+    </div>
+    
+    <!-- Logika JavaScript untuk login -->
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000/api';
+        const errorMessage = document.getElementById('error-message');
+
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            errorMessage.innerText = '';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Accept': 'application/json'
+                    },
+                    body: `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Login gagal!');
+                }
+                
+                // Setelah login berhasil, simpan token dan pindah ke halaman utama
+                localStorage.setItem('api_token', result.token);
+                localStorage.setItem('user_name', result.user.name);
+                
+                // Arahkan ke halaman utama aplikasi (ganti dengan nama file yg sesuai)
+                window.location.href = 'aplikasi_pengguna_utama.html';
+
+            } catch (error) {
+                console.error('Login error:', error);
+                errorMessage.innerText = error.message;
+            }
+        }
+    </script>
+</body>
+</html>

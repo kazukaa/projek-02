@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jadwal Saya - Workout App</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .modal { display: none; }
+        .modal.active { display: flex; }
+        /* Style untuk tombol saat loading */
+        button:disabled {
+            cursor: not-allowed;
+            background-color: #4A5568;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <!-- Header / Navbar -->
+    <header class="bg-gray-800 shadow-md sticky top-0 z-20">
+        <nav class="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
+            <a href="dashboard_pengguna.html" class="flex items-center space-x-3">
+                <img src="images/logo.png" alt="Logo Aplikasi" class="w-10 h-auto invert">
+                <span class="text-xl font-bold">Workout App</span>
+            </a>
+            <div>
+                <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 text-sm">
+                    Logout
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Konten Utama -->
+    <main class="container mx-auto px-4 sm:px-6 py-8">
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+            <h1 class="text-3xl sm:text-4xl font-bold text-center sm:text-left">Jadwal Latihan Saya</h1>
+            <button onclick="openModal()" class="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center space-x-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                <span>Buat Jadwal Baru</span>
+            </button>
+        </div>
+        <div id="weekly-schedule-container" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
+            <!-- Kartu hari akan diisi oleh JavaScript -->
+        </div>
+    </main>
+
+    <!-- Modal untuk Membuat/Edit Jadwal -->
+    <div id="schedule-modal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-30">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl p-6 m-4 max-h-screen overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-4" id="modal-title">Buat Jadwal Baru</h2>
+            <!-- PERUBAHAN: Menambahkan tempat untuk pesan error -->
+            <div id="modal-error-message" class="bg-red-900/50 border border-red-700 text-red-300 p-3 rounded-md mb-4 hidden"></div>
+            
+            <form id="schedule-form" onsubmit="event.preventDefault(); handleSaveSchedule();">
+                <input type="hidden" id="schedule-id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <input type="text" id="schedule-name" placeholder="Nama Jadwal (misal: Fokus Kaki)" class="bg-gray-700 p-2 rounded" required>
+                    <select id="schedule-day" class="bg-gray-700 p-2 rounded">
+                        <option value="">Pilih Hari (Opsional)</option>
+                        <option value="Monday">Senin</option>
+                        <option value="Tuesday">Selasa</option>
+                        <option value="Wednesday">Rabu</option>
+                        <option value="Thursday">Kamis</option>
+                        <option value="Friday">Jumat</option>
+                        <option value="Saturday">Sabtu</option>
+                        <option value="Sunday">Minggu</option>
+                    </select>
+                </div>
+                <div class="flex items-center space-x-2 mb-4">
+                    <input type="checkbox" id="is-rest-day" onchange="toggleExerciseSection()">
+                    <label for="is-rest-day">Tandai sebagai Hari Istirahat (Rest Day)</label>
+                </div>
+                <div id="exercise-section">
+                    <h3 class="font-semibold mb-2">Daftar Latihan</h3>
+                    <div id="exercise-list" class="space-y-2"></div>
+                    <button type="button" onclick="addExerciseField()" class="mt-2 text-teal-400 hover:text-teal-300 text-sm">+ Tambah Latihan</button>
+                </div>
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" onclick="closeModal()" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded">Batal</button>
+                    <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded">Simpan Jadwal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000/api';
+        const apiToken = localStorage.getItem('api_token');
+        let allExercises = [];
+
+        async function initializePage() {
+            if (!apiToken) {
+                window.location.href = 'aplikasi_pengguna_login.html';
+                return;
+            }
+            await fetchAllExercises();
+            await renderWeeklySchedule();
+        }
+
+        // ... (fungsi fetchAllExercises dan renderWeeklySchedule tetap sama) ...
+        async function renderWeeklySchedule() {
+            const container = document.getElementById('weekly-schedule-container');
+            container.innerHTML = '<p class="col-span-full text-center">Memuat jadwal...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/my-schedules`, {
+                    headers: { 'Authorization': `Bearer ${apiToken}`, 'Accept': 'application/json' }
+                });
+                if (!response.ok) throw new Error('Gagal mengambil jadwal Anda.');
+                const result = await response.json();
+                const schedules = result.data;
+
+                const schedulesByDay = {};
+                schedules.forEach(schedule => { if(schedule.day_of_week) { schedulesByDay[schedule.day_of_week] = schedule; } });
+
+                const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                const dayNamesId = {'Monday': 'Senin', 'Tuesday': 'Selasa', 'Wednesday': 'Rabu', 'Thursday': 'Kamis', 'Friday': 'Jumat', 'Saturday': 'Sabtu', 'Sunday': 'Minggu'};
+                
+                let weekHtml = '';
+                days.forEach(day => {
+                    const schedule = schedulesByDay[day];
+                    weekHtml += `<div class="bg-gray-800 p-4 rounded-lg flex flex-col">`;
+                    weekHtml += `<h3 class="font-bold mb-2">${dayNamesId[day]}</h3>`;
+                    if (schedule) {
+                        if (schedule.is_rest_day) { weekHtml += `<div class="bg-blue-900/50 text-blue-300 p-3 rounded-md text-center flex-grow flex items-center justify-center">Hari Istirahat</div>`; } 
+                        else { weekHtml += `<div class="bg-gray-700 p-3 rounded-md flex-grow"><p class="font-semibold">${schedule.name}</p><ul class="text-sm text-gray-400 list-disc list-inside mt-1">${schedule.exercises.map(ex => `<li>${ex.name}</li>`).join('')}</ul></div>`; }
+                    } else { weekHtml += `<div class="text-sm text-gray-500 flex-grow flex items-center justify-center">Belum ada jadwal</div>`; }
+                    weekHtml += `</div>`;
+                });
+                container.innerHTML = weekHtml;
+            } catch(error) { container.innerHTML = `<p class="col-span-full text-center text-red-500">${error.message}</p>`; }
+        }
+
+
+        // PERUBAHAN: Membuat fungsi handleSaveSchedule lebih pintar
+        async function handleSaveSchedule() {
+            const saveButton = document.querySelector('#schedule-form button[type="submit"]');
+            const modalError = document.getElementById('modal-error-message');
+
+            // Feedback visual: Tampilkan status "loading"
+            saveButton.disabled = true;
+            saveButton.innerHTML = 'Menyimpan...';
+            modalError.classList.add('hidden'); // Sembunyikan pesan error lama
+            modalError.innerText = '';
+
+            const scheduleData = {
+                name: document.getElementById('schedule-name').value,
+                day_of_week: document.getElementById('schedule-day').value || null,
+                is_rest_day: document.getElementById('is-rest-day').checked,
+                exercises: []
+            };
+
+            if (!scheduleData.is_rest_day) {
+                document.querySelectorAll('.exercise-field').forEach((field, index) => {
+                    const id = field.querySelector('.exercise-select').value;
+                    if (id) {
+                        scheduleData.exercises.push({
+                            id: id, order: index + 1,
+                            reps: field.querySelector('.exercise-reps').value || null,
+                            duration_seconds: field.querySelector('.exercise-duration').value || null
+                        });
+                    }
+                });
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/my-schedules`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${apiToken}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify(scheduleData)
+                });
+                
+                const result = await response.json();
+                if (!response.ok) {
+                    // Jika error validasi, tampilkan semua pesan errornya
+                    if (result.errors) {
+                        const errorMessages = Object.values(result.errors).flat();
+                        throw new Error(errorMessages.join('\n'));
+                    }
+                    throw new Error(result.message || 'Gagal menyimpan jadwal.');
+                }
+                
+                closeModal();
+                await renderWeeklySchedule(); // Refresh tampilan
+
+            } catch (error) {
+                // Tampilkan pesan error di dalam modal
+                modalError.innerText = error.message;
+                modalError.classList.remove('hidden');
+            } finally {
+                // Kembalikan tombol ke keadaan semula
+                saveButton.disabled = false;
+                saveButton.innerHTML = 'Simpan Jadwal';
+            }
+        }
+        
+        // ... (sisa fungsi JavaScript tetap sama)
+        function openModal() { document.getElementById('schedule-modal').classList.add('active'); }
+        function closeModal() { document.getElementById('schedule-form').reset(); document.getElementById('exercise-list').innerHTML = ''; document.getElementById('exercise-section').style.display = 'block'; document.getElementById('schedule-modal').classList.remove('active'); document.getElementById('modal-error-message').classList.add('hidden'); }
+        function toggleExerciseSection() { document.getElementById('exercise-section').style.display = document.getElementById('is-rest-day').checked ? 'none' : 'block'; }
+        function addExerciseField() { const list = document.getElementById('exercise-list'); const newField = document.createElement('div'); newField.className = 'exercise-field grid grid-cols-4 gap-2 items-center'; let optionsHtml = '<option value="">Pilih Latihan...</option>' + allExercises.map(ex => `<option value="${ex.id}">${ex.name}</option>`).join(''); newField.innerHTML = `<select class="exercise-select bg-gray-700 p-2 rounded col-span-2">${optionsHtml}</select><input type="number" class="exercise-reps bg-gray-700 p-2 rounded" placeholder="Reps"><input type="number" class="exercise-duration bg-gray-700 p-2 rounded" placeholder="Detik">`; list.appendChild(newField); }
+        function handleLogout() { localStorage.removeItem('api_token'); localStorage.removeItem('user_name'); window.location.href = 'aplikasi_pengguna_login.html'; }
+        document.addEventListener('DOMContentLoaded', initializePage);
+    </script>
+</body>
+</html>
