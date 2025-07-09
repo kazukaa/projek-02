@@ -12,9 +12,11 @@ class Achievement extends Model
     protected $fillable = [
         'name',
         'description',
-        'icon_url',
+        'image_url',
         'type',
         'criteria',
+        'requirement',
+        
     ];
 
     // Memberitahu Laravel bahwa kolom 'criteria' adalah JSON

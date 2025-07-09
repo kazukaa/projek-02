@@ -14,40 +14,58 @@ class MyActivityChart extends ChartWidget
 
     protected function getData(): array
     {
-        /** @var \App\Models\User $user */
         $user = Auth::user();
-        $endDate = Carbon::now();
+        $endDate = now();
         $startDate = $endDate->copy()->subDays(6);
 
+        // Ambil semua workout log selama 7 hari terakhir, termasuk relasi exercise
         $logs = $user->workoutLogs()
+            ->with('exercise')
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(duration_seconds) as total_duration'))
-            ->groupBy('date')
-            ->get()
-            ->keyBy('date');
+            ->get();
 
+        // dd($logs); // Debugging: Periksa data yang diambil
+
+        // Kelompokkan berdasarkan tanggal
+        $durasiPerTanggal = [];
+
+        foreach ($logs as $log) {
+            $tanggal = $log->created_at->format('Y-m-d');
+            $durasi = $log->exercise->duration_seconds ?? 0;
+
+            if (!isset($durasiPerTanggal[$tanggal])) {
+                $durasiPerTanggal[$tanggal] = 0;
+            }
+
+            $durasiPerTanggal[$tanggal] += $durasi;
+        }
+
+        // Format label dan data
         $labels = [];
         $data = [];
 
-        for ($i = 0; $i < 7; $i++) {
-            $date = $startDate->copy()->addDays($i);
-            $dateString = $date->format('Y-m-d');
-            $labels[] = $date->translatedFormat('l'); // Nama hari dalam Bahasa Indonesia
-            $data[] = isset($logs[$dateString]) ? round($logs[$dateString]->total_duration / 60) : 0;
+        foreach ($logs as $log) {
+            $tanggal = Carbon::parse($log->created_at)->toDateString();
+            $durasi = $log->exercise->duration_seconds ?? 0;
+
+            if (!isset($durasiPerTanggal[$tanggal])) {
+                $durasiPerTanggal[$tanggal] = 0;
+            }
+
+            $durasiPerTanggal[$tanggal] += $durasi;
         }
 
         return [
-            'datasets' => [
-                [
-                    'label' => 'Durasi Latihan (Menit)',
-                    'data' => $data,
-                    'backgroundColor' => 'rgba(75, 192, 192, 0.6)',
-                    'borderColor' => 'rgba(75, 192, 192, 1)',
-                ],
-            ],
+            'datasets' => [[
+                'label' => 'Durasi Latihan (Menit)',
+                'data' => $data,
+                'backgroundColor' => 'rgba(75, 192, 192, 0.6)',
+                'borderColor' => 'rgba(75, 192, 192, 1)',
+            ]],
             'labels' => $labels,
         ];
     }
+
 
     protected function getType(): string
     {

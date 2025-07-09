@@ -30,10 +30,19 @@ class UserSchedule extends Model
     /**
      * Mendefinisikan bahwa jadwal ini bisa memiliki banyak Exercise.
      */
-    public function exercises(): BelongsToMany
+    // public function exercises(): BelongsToMany
+    // {
+    //     return $this->belongsToMany(Exercise::class, 'exercise_user_schedule')
+    //         ->withPivot('urutan', 'repetisi', 'duration_seconds') // Pastikan ini juga 'urutan'
+    //         ->orderByPivot('urutan', 'asc'); // <-- Diubah menjadi 'urutan'
+    // }
+
+    public function exercises()
     {
         return $this->belongsToMany(Exercise::class, 'exercise_user_schedule')
-            ->withPivot('urutan', 'repetisi', 'duration_seconds') // Pastikan ini juga 'urutan'
-            ->orderByPivot('urutan', 'asc'); // <-- Diubah menjadi 'urutan'
+            ->using(\App\Models\ExerciseUserSchedule::class) // gunakan model pivot
+            ->withPivot(['urutan', 'repetisi', 'duration_seconds'])
+            ->orderByPivot('urutan', 'asc') // <-- Diubah menjadi 'urutan'
+            ->withTimestamps();
     }
 }

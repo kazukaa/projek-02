@@ -44,9 +44,16 @@ class Exercise extends Model
         return $this->belongsToMany(WorkoutPlan::class, 'exercise_workout_plan');
     }
 
-    public function userSchedules(): BelongsToMany
-    {
-        // Pastikan nama tabel pivot 'exercise_user_schedule' sudah benar
-        return $this->belongsToMany(UserSchedule::class, 'exercise_user_schedule');
-    }
+    // public function userSchedules(): BelongsToMany
+    // {
+    //     // Pastikan nama tabel pivot 'exercise_user_schedule' sudah benar
+    //     return $this->belongsToMany(UserSchedule::class, 'exercise_user_schedule');
+    // }
+
+    public function userSchedules()
+{
+    return $this->belongsToMany(UserSchedule::class, 'exercise_user_schedule')
+        ->withPivot(['urutan', 'repetisi', 'duration_seconds'])
+        ->withTimestamps();
+}
 }

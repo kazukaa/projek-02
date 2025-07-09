@@ -18,7 +18,8 @@
         width: 100%;
         height: 100%;
         background-color: rgba(0, 0, 0, 0.75);
-        display: none; /* Disembunyikan secara default */
+        display: none;
+        /* Disembunyikan secara default */
         justify-content: center;
         align-items: center;
         z-index: 9999;
@@ -41,7 +42,8 @@
 
     #timer-display {
         color: white;
-        font-size: 4rem; /* 64px */
+        font-size: 4rem;
+        /* 64px */
         font-weight: bold;
         font-family: monospace, sans-serif;
     }
@@ -53,21 +55,37 @@
         margin: 15px 5px 0 5px;
         border-radius: 5px;
         cursor: pointer;
-        font-size: 1rem; /* 16px */
+        font-size: 1rem;
+        /* 16px */
         transition: background-color 0.2s;
     }
-    
-    #pause-resume-btn { background-color: #4f46e5; }
-    #pause-resume-btn:hover { background-color: #4338ca; }
+
+    #pause-resume-btn {
+        background-color: #4f46e5;
+    }
+
+    #pause-resume-btn:hover {
+        background-color: #4338ca;
+    }
 
     #finish-btn {
-        background-color: #16a34a; /* Warna hijau */
-        display: none; /* Sembunyi secara default */
+        background-color: #16a34a;
+        /* Warna hijau */
+        display: none;
+        /* Sembunyi secara default */
     }
-    #finish-btn:hover { background-color: #15803d; }
-    
-    #close-timer-btn { background-color: #6b7280; }
-    #close-timer-btn:hover { background-color: #4b5563; }
+
+    #finish-btn:hover {
+        background-color: #15803d;
+    }
+
+    #close-timer-btn {
+        background-color: #6b7280;
+    }
+
+    #close-timer-btn:hover {
+        background-color: #4b5563;
+    }
 </style>
 
 
@@ -79,7 +97,7 @@
         const pauseResumeBtn = document.getElementById('pause-resume-btn');
         const closeTimerBtn = document.getElementById('close-timer-btn');
         const finishBtn = document.getElementById('finish-btn');
-        
+
         // Suara notifikasi saat timer selesai
         const finishSound = new Audio('https://www.soundjay.com/buttons/sounds/button-1.mp3');
 
@@ -99,7 +117,7 @@
         // Fungsi utama untuk menjalankan timer
         function runTimer(duration) {
             clearInterval(countdownInterval); // Hentikan timer sebelumnya jika ada
-            
+
             timeLeftInSeconds = duration;
             isPaused = false;
 
@@ -139,15 +157,39 @@
             isPaused = !isPaused;
             pauseResumeBtn.textContent = isPaused ? 'Resume' : 'Pause';
         });
-        
+
         // Menambahkan fungsi pada tombol 'Selesai'
         finishBtn.addEventListener('click', () => {
             if (currentExerciseId) {
-                // Kirim sinyal 'markExerciseAsComplete' ke backend beserta ID Latihan
-                Livewire.dispatch('markExerciseAsComplete', { exerciseId: currentExerciseId });
-                closeTimerBtn.click(); // Otomatis tutup timer setelahnya
+                // Kirim AJAX request untuk menyimpan log
+                fetch('/log-workout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        },
+                        body: JSON.stringify({
+                            exercise_id: currentExerciseId,
+                        }),
+                    })
+                    .then(response => {
+                        if (!response.ok) throw new Error('Gagal menyimpan workout log');
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Log berhasil disimpan:', data);
+                        Livewire.dispatch('markExerciseAsComplete', {
+                            exerciseId: currentExerciseId
+                        });
+                        closeTimerBtn.click(); // Tutup timer
+                    })
+                    .catch(error => {
+                        console.error('Error menyimpan log:', error);
+                        alert('Gagal menyimpan log latihan.');
+                    });
             }
         });
+
 
         // Menambahkan fungsi pada tombol 'Tutup'
         closeTimerBtn.addEventListener('click', () => {

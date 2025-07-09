@@ -39,11 +39,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Rute untuk riwayat latihan (log)
-    Route::apiResource('workout-logs', WorkoutLogController::class)->only(['index', 'store']);
+    // Route::apiResource('workout-logs', WorkoutLogController::class)->only(['index', 'store']);
 
     // Rute untuk jadwal kustom pengguna
     Route::apiResource('my-schedules', UserScheduleController::class);
-    
+
     // Rute untuk melihat pencapaian (lencana)
     Route::get('/my-achievements', [AchievementController::class, 'index']);
 
@@ -51,5 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // TAMBAHKAN BARIS INI untuk mendaftarkan semua pintu layanan jadwal kustom
     Route::apiResource('my-schedules', UserScheduleController::class);
-
 });
+
+
+// Route::middleware('auth:sanctum')->post('/log-workout', [WorkoutLogController::class, 'store']);

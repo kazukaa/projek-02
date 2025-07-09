@@ -21,9 +21,9 @@ class WorkoutLogController extends Controller
 
         // 2. Ambil semua log yang 'user_id'-nya cocok, urutkan dari yang terbaru.
         $logs = WorkoutLog::where('user_id', $userId)
-                          ->with('exercise') // Muat data latihannya juga
-                          ->latest() // Urutkan dari yang paling baru
-                          ->get();
+            ->with('exercise') // Muat data latihannya juga
+            ->latest() // Urutkan dari yang paling baru
+            ->get();
 
         // 3. Kembalikan data dalam bentuk koleksi resource.
         return WorkoutLogResource::collection($logs);
@@ -34,23 +34,18 @@ class WorkoutLogController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validasi data yang masuk. Minimal harus ada 'exercise_id'.
-        $validatedData = $request->validate([
-            'exercise_id' => 'required|exists:exercises,id',
-            'workout_plan_id' => 'nullable|exists:workout_plans,id',
-            'reps' => 'nullable|integer',
-            'duration_seconds' => 'nullable|integer',
+
+        // $validatedData = $request->validate([
+        //     'exercise_id' => 'required|exists:exercises,id',
+        //     'user_id'
+        // ]);
+
+        WorkoutLog::create([
+            'user_id' => Auth::id(), // Ambil ID pengguna yang sedang login
+            'exercise_id' => $request->input('exercise_id'), // Ambil ID latihan dari request
         ]);
 
-        // 2. Tambahkan 'user_id' dari pengguna yang sedang login.
-        $validatedData['user_id'] = Auth::id();
 
-        // 3. Buat catatan baru di database.
-        $log = WorkoutLog::create($validatedData);
-
-        WorkoutLogged::dispatch($log);
-
-        // 4. Kembalikan data log yang baru dibuat dengan status 201 Created.
-        return response(new WorkoutLogResource($log->load('exercise')), 201);
+        return response()->json(['message' => 'Workout log created successfully'], 201);
     }
 }
